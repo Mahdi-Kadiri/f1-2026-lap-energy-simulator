@@ -8,39 +8,54 @@ Circuit: Circuit de Barcelona-Catalunya. Language: Python.
 
 ---
 
-## Headline result — energy-legal laps vs real 2026 telemetry
+## Headline result — validated across two circuits
 
-Every parameter identified or calibrated from public FastF1 telemetry alone.
-The reported lap runs the full 2026 energy regulations: DP-optimised MGU-K
-schedule, 4 MJ state-of-charge window (C5.2.9), 8.5 MJ/lap recharge cap
-(C5.2.10), speed-dependent deployment profile (C5.2.8), store emptied at the
-flag as a flying lap demands.
+Tyre grip and downforce were identified from ten Barcelona Qualifying laps,
+then applied UNCHANGED to two independent tests: a Barcelona free practice lap
+outside the fit set, and a different circuit entirely.
 
-| Energy-legal lap | vs reference | r | Velocity RMS | Corner bias | Terminal |
-|---|---|---|---|---|---|
-| Barcelona Q (RUS 74.679) | +3.25% | 0.926 | 25.1 km/h | −8.8% | −2.0 km/h |
-| Barcelona FP3 (RUS 75.679) | +1.89% | 0.907 | 26.8 km/h | −6.2% | +2.0 km/h |
-| **Silverstone Q (ANT 88.111)** | **+0.06%** | **0.950** | **18.1 km/h** | −6.6% | −12.9 km/h |
+| | In-sample (Barcelona Q) | Out-of-sample (Barcelona FP3) | **Different circuit (Silverstone Q)** |
+|---|---|---|---|
+| Reference | RUS 74.679 s | RUS 75.679 s | ANT 88.111 s |
+| Simulated | 74.110 s | 74.110 s | 83.547 s |
+| Lap delta | −0.76% | −2.07% | −5.18% |
+| **Corner speed bias** | **−9.5%** | **−7.0%** | **−9.4%** |
+| Correlation | 0.937 | 0.926 | **0.941** |
+| Velocity RMS | 24.2 km/h | 26.6 km/h | 30.5 km/h |
+| Terminal speed error | +6.5 km/h | +10.5 km/h | **+30.7 km/h** |
 
-Silverstone: 57 milliseconds off a real pole lap over 88 seconds — with the
-honest caveat that a −6.6% corner conservatism and a −12.9 km/h terminal
-deficit partially cancel inside it. Compensating errors are reported, not
-hidden; that is what the distributed metrics are for.
+### What is validated
 
-The residual gradient (+0.06% → +1.9% → +3.3%) tracks the documented
-corner-speed conservatism, largest against the lap that extracted the most
-(pole). Corner bias is consistent at −6 to −9% across two circuits, three
-sessions and two energy formulations — a structural signature (yaw-moment
-balance stricter than a real, setup-balanced car; load-sensitivity exponent
-slightly aggressive under aero load), stated as a limitation rather than
-tuned away against the same data that revealed it.
+**Cornering performance transfers across circuits.** Corner speed bias is
+−9.5% at Barcelona and −9.4% at Silverstone: parameters fitted at one circuit
+reproduce cornering at a different layout, with a different corner mix and a
+different driver, to within 0.1 percentage points. Correlation at Silverstone
+(0.941) is higher than at the circuit the parameters came from. Bias also
+improved out-of-sample at Barcelona (−9.5% to −7.0%), which is the opposite
+of what overfitting produces.
 
-**The regulations, demonstrated:** the Barcelona legal lap deploys 7.49 MJ -
-nearly twice the store - by harvesting 3.63 MJ en route, with the SoC swing
-(0.15-4.00 MJ) inside the C5.2.9 window. Under the 2014-2025 rules that lap
-is illegal; under 2026 it is exactly what the regulations permit, because
-C5.2.9 bounds the state-of-charge WINDOW, not per-lap deployment. The model
-enforces the rule as written, not as remembered.
+### What is NOT validated
+
+**Straight-line performance.** Terminal speed error grows from +6.5 km/h at
+Barcelona to +30.7 km/h at Silverstone. The cause is visible in the velocity
+trace: the simulator flat-tops at its terminal speed on Silverstone's long
+straights, while the real car peaks 30 km/h lower. Barcelona masked this
+because its main straight ends at a braking point before the terminal speed
+binds; Silverstone's straights are long enough to expose it.
+
+CdA is therefore too low, confirmed independently at two circuits. It remains
+the model's least constrained parameter. Identifying it from straight-line
+acceleration was attempted and REJECTED by its own separation check: the fit
+returned an ICE power of −4 kW with r² = 0.19, because it assumed the car
+deploys the MGU-K regulatory ceiling continuously. It does not - this
+project's own DP optimiser shows a legal qualifying lap deploys only ~2.2 MJ
+of a 4 MJ store. The true deployment schedule is not observable from public
+telemetry, so drag and power cannot be separated from it. That is a data
+limitation, not a modelling one, and the honest response is to leave CdA
+tagged [EST] and say so.
+
+The −5.18% lap delta at Silverstone is inflated by this straight-line error
+and should not be read as cornering accuracy.
 
 ---
 
